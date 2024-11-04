@@ -362,6 +362,16 @@ class SymmetricalLogTransform(Transform):
 
     def transform_non_affine(self, values):
         abs_a = np.abs(values)
+        if (abs_a < self.linthresh).all():
+            _api.warn_external(
+                "All input values are below linthresh, making the transform effectively linear."
+        )
+        if np.any(abs_a > 0):  # Only check if there's valid data
+            suggested_linthresh = np.percentile(abs_a, 5)  # Set to 5% of data as a suggestion
+            if suggested_linthresh < self.linthresh:
+               _api.warn_external(
+                    f"Consider adjusting linthresh to {suggested_linthresh:.4f} based on input data."
+                )
         with np.errstate(divide="ignore", invalid="ignore"):
             out = np.sign(values) * self.linthresh * (
                 self._linscale_adj +
